@@ -100,5 +100,8 @@ if __name__ == '__main__':
     docx_list = get_docx_list(args.source)
     print(docx_list)
 
+    if not os.path.exists(args.output):
+        os.makedirs(args.output)
+
     for d in docx_list:
         change_cover(args.id, args.class_name, args.location, d, output_dir=args.output)
