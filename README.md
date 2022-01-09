@@ -2,6 +2,17 @@
 
 为了应对我校教务部要求改实验报告封面而诞生的脚本
 
+## 效果
+<div align=center>
+<img width="398" alt="截屏2022-01-09 上午10 56 15" src="https://user-images.githubusercontent.com/13096985/148667390-253b0af5-cf22-42b4-b7d4-82f6a93f20c4.png">
+  <p>原封面</p>
+</div>
+
+<div align=center>
+<img width="413" alt="截屏2022-01-09 上午10 54 46" src="https://user-images.githubusercontent.com/13096985/148667363-3087810f-cbdd-4845-a538-7559f65ee9ec.png">
+  <p>新封面</p>
+</div>
+
 ## 原理
 使用 python-docx 读取原报告封面信息，并利用 python-docx 以新封面模板构造新的实验报告封面，
 新封面和原报告都转换为 pdf 文件，最后将取新封面和原报告除了封面的页面，将它们合并到一个 pdf 中。
