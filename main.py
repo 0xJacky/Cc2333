@@ -11,7 +11,7 @@ from docx.shared import Pt
 from cc import magic, magic_reporter, magic_exp_date
 
 
-def change_cover(_id, class_name, location, orig_docx_path, output_dir='./output'):
+def change_cover(_id, _course_name, class_name, location, orig_docx_path, output_dir='./output'):
     # 合成新报告封面
     cover_path = '1 实验报告封皮.docx'
     cover = Document(cover_path)
@@ -29,7 +29,12 @@ def change_cover(_id, class_name, location, orig_docx_path, output_dir='./output
     print('总共有 %s 段文字' % (len(_para)))
 
     # 提取原报告封面的信息
-    course_name, exp_name, teacher_name, reporter, exp_time, submit_time = read_docx(orig_docx_path)
+    course_name, exp_name, teacher_name, reporter, exp_time, submit_time, is_report = read_docx(orig_docx_path)
+    # 报告封面压根就没有就不给你转了
+    if not is_report:
+        return
+    if _course_name:
+        course_name = _course_name
     print(course_name, exp_name, teacher_name, exp_time, submit_time)
 
     # 课程名称
@@ -45,7 +50,8 @@ def change_cover(_id, class_name, location, orig_docx_path, output_dir='./output
     # 实验地点
     magic(_para, 6, location)
     # 实验时间
-    magic_exp_date(_para, exp_time)
+    # magic_exp_date(_para, exp_time)
+    magic(_para, 7, submit_time)
     # 提交时间
     magic(_para, 8, submit_time)
 
@@ -55,16 +61,16 @@ def change_cover(_id, class_name, location, orig_docx_path, output_dir='./output
 
     # 定义导出路径
     orig_docx_name = Path(orig_docx_path).stem
-    docx_path = '%s/%s.docx' % (output_dir, orig_docx_name)
+    cover_docx_path = '%s/%s-cover.docx' % (output_dir, orig_docx_name)
     cover_pdf_path = '%s/%s-cover.pdf' % (output_dir, orig_docx_name)
     orig_pdf_path = '%s/%s-orig.pdf' % (output_dir, orig_docx_name)
 
     # 保存新封面 docx
-    cover.save(docx_path)
+    cover.save(cover_docx_path)
     # 转换新封面为 pdf
-    convert(docx_path, cover_pdf_path)
+    convert(cover_docx_path, cover_pdf_path)
     # 转换旧报告为 pdf
-    convert(orig_docx_path, '%s/%s-orig.pdf' % (output_dir, orig_docx_name))
+    convert(orig_docx_path, orig_pdf_path)
 
     # 选择合并 pdf
     cover_pdf = PdfFileReader(cover_pdf_path)
@@ -83,7 +89,7 @@ def change_cover(_id, class_name, location, orig_docx_path, output_dir='./output
         output.write(f)
 
     # 清理
-    os.remove(docx_path)
+    os.remove(cover_docx_path)
     os.remove(cover_pdf_path)
     os.remove(orig_pdf_path)
 
@@ -91,6 +97,7 @@ def change_cover(_id, class_name, location, orig_docx_path, output_dir='./output
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Project Cc2333')
     parser.add_argument('-i', '--id', action="store", help='course id')
+    parser.add_argument('-n', '--course_name', action="store", help='course name')
     parser.add_argument('-c', '--class_name', action="store", help='class name')
     parser.add_argument('-l', '--location', action="store", help='exp location')
     parser.add_argument('-s', '--source', action="store", help='reports dir')
@@ -100,8 +107,18 @@ if __name__ == '__main__':
     docx_list = get_docx_list(args.source)
     print(docx_list)
 
-    if not os.path.exists(args.output):
+    if args.output and not os.path.exists(args.output):
         os.makedirs(args.output)
-
+    fail_list = []
     for d in docx_list:
-        change_cover(args.id, args.class_name, args.location, d, output_dir=args.output)
+        # 无指定输出路径则保存到原报告的目录下
+        output_dir = args.output if args.output else d[0]
+        d = os.path.join(d[0], d[1])
+        # 仅支持转换 docx 格式的报告
+        if '.docx' not in d:
+            continue
+        try:
+            change_cover(args.id, args.course_name, args.class_name, args.location, d, output_dir=output_dir)
+        except Exception as e:
+            fail_list.append([d, e])
+    print(fail_list)
